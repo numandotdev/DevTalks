@@ -1,11 +1,15 @@
 import express from 'express'; // Import Express
-import { addBlog, deleteBlogById, editBlogById, getAllBlogs } from '../controllers/blogController.js';
+import { uploadBlog, deleteBlogById, editBlogById, getAllBlogs, addBlogLike } from '../controllers/blogController.js';
 
 const blogRouter = express.Router();
 
-blogRouter.get('/', getAllBlogs);
-blogRouter.post('/add', addBlog)
-blogRouter.delete('/delete/:id', deleteBlogById)
+// CRUD Operation 
+blogRouter.get('/lists', getAllBlogs);
+blogRouter.post('/upload', uploadBlog)
 blogRouter.put('/edit/:id', editBlogById)
+blogRouter.delete('/delete/:id', deleteBlogById)
+
+// Engagements
+blogRouter.post('/like/:id', addBlogLike);
 
 export default blogRouter;

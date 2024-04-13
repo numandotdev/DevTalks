@@ -7,7 +7,7 @@ import {
 
 const userRouter = express.Router();
 
-userRouter.get("/", getAllusers);
+userRouter.get("/lists", getAllusers);
 userRouter.post("/signup", signupUser);
 userRouter.post("/login", loginUser);
 

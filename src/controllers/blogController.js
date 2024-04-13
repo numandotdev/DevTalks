@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import Blog from "../models/Blog.js";
 import User from "../models/User.js";
 
-// @route   GET api/blogs/
+// @route   GET api/blogs/lists
 export const getAllBlogs = async (req, res) => {
   let blogsList;
   try {
@@ -19,16 +19,12 @@ export const getAllBlogs = async (req, res) => {
   }
 };
 
-// @route   POST api/blogs/add
-export const addBlog = async (req, res) => {
+// @route   POST api/blogs/upload
+export const uploadBlog = async (req, res) => {
   const { title, content, author, imageUrl } = req.body;
   if (!title || !content || !author)
     return res.status(400).json({ msg: "Missing fields" });
-  // Check for existing blog with the same title
-  const isBlogAvailable = await Blog.findOne({ title: title });
-
-  if (isBlogAvailable)
-    return res.status(400).json({ msg: "Blog already exists" });
+  
   let existingUser;
   try {
     existingUser = await User.findById(author);
@@ -108,5 +104,60 @@ export const editBlogById = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to update blog post" });
+  }
+};
+
+// @route   POST /api/blog/like/:id
+
+export const addBlogLike = async (req, res) => {
+  const { id } = req.params;
+  const { email } = req.body;
+
+  if (!id || !email) {
+    res.status(400).json({
+      message: "Invalid request. Please provide both blog ID and user email.",
+    });
+    return;
+  }
+
+  try {
+    const blog = await Blog.findById(id);
+    const user = await User.findOne({ email });
+
+    if (!user || !blog) {
+      res.status(404).json({ message: "User or blog not found." });
+      return;
+    }
+
+    const userIndex = user.likes.indexOf(blog.id);
+    if (userIndex !== -1) {
+      const blogIndex = blog.likedBy.indexOf(user.id);
+
+      user.likes.splice(userIndex, 1);
+      blog.likedBy.splice(blogIndex, 1);
+
+      const session = await mongoose.startSession();
+      session.startTransaction();
+      await user.save({ session });
+      await blog.save({ session });
+      await session.commitTransaction();
+
+      res.status(200).json({ message: "Blog like has been removed." });
+      return;
+    }
+
+    user.likes.unshift(blog.id);
+    blog.likedBy.unshift(user.id);
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    await user.save({ session });
+    await blog.save({ session });
+    await session.commitTransaction();
+
+    res.status(200).json({ message: "Blog has been liked." });
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).json({ message: "Internal server error." });
   }
 };
